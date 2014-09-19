@@ -68,8 +68,9 @@ for (folder in inFolders[2:length(inFolders)]){
     layer <- substr(shapeFile, 1, nchar(shapeFile)-4)
     prjFile <- paste0(substr(shapeFile, 1, nchar(shapeFile) - 3), "prj")
     shapeLayer <- try(readOGR(shapeFile, layer), silent = TRUE)
-    prjInfo <- readChar(prjFile, nchars=50)
     if('try-error' %in% class(shapeLayer)) next
+    prjInfo <- try(readChar(prjFile, nchars=50), silent = TRUE)
+    if('try-error' %in% class(prjInfo)) next
     if(grepl("WGS_1984_Complex_UTM_Zone_26N", prjInfo)){
       proj.in <- paste0("+proj=utm +zone=26 +datum=WGS84 +units=m +no_defs ",
                         "+ellps=WGS84 +towgs84=0,0,0")
