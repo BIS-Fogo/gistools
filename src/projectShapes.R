@@ -80,6 +80,10 @@ for (folder in inFolders[2:length(inFolders)]){
       shapeLayer <- spTransform(shapeLayer, CRS(proj.out))
       shapeLayer <- writeOGR(shapeLayer, outPath, layer, 
                              driver<-"ESRI Shapefile", overwrite_layer = TRUE)
+      #change projection name
+      prjNew <- try(readChar(paste0(outPath,"/",layer,".prj"), nchars=900), silent = TRUE)
+      prjNew=gsub("Lambert_Conformal_Conic","Cabo Verde Cónica Secante de Lambert",prjNew)
+      writeChar(prjNew,paste0(outPath,"/",layer,".prj"))
     }
   }
 }
