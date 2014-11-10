@@ -30,8 +30,8 @@
 #        PATH
 
 #### User setttings ############################################################
-inpath <- "D:/active/bis-fogo/data/field-campaign"
-top_level_outpath <- "D:/active/bis-fogo/data/field-campaign"
+inpath <- "/home/alice/Desktop/kap_verde_exkursion/AGNauss_182/field_campaign_2014/procd/"
+top_level_outpath <- "/home/alice/Desktop/kap_verde_exkursion/AGNauss_182/field_campaign_2014/raw/"
 
 # Use this for the Cape Verdian national projection as defined by
 # SR-ORG:7391 at www.spatialreference.org and EPSG:4825 at
@@ -62,11 +62,26 @@ colnames(veg_nat) <- sapply(seq(ncol(veg_nat[2,])), function(x){
   paste0(toupper(veg_nat[2,x]), "_", substr(veg_nat[3,x], 1, nchar(as.character(veg_nat[3,x]))-1))
 })
 
-# Clean and merge vegetation data sets
+# Clean vegetation datasets
+
+## getting rid of last two lines
 veg_tec <- veg_tec[-2,]
 veg_agr <- veg_agr[-2,]
 veg_nat <- veg_nat[-2,]
 
+## AZ: correct several colnames (veg_nat) # not working yet
+colnames(veg_nat[35]) <- "GLO_5"
+colnames(veg_nat[36]) <- "GLO_10"
+colnames(veg_nat[39]) <- "HEL_5"
+colnames(veg_nat[40]) <- "HEL_10"
+
+##AZ: replace all numeric values in the veg_nat table with "x"
+#Problem 1: every value is a character...numeric values can not be seperated by type
+#Problem 2: not looking for one specific value (like e.g. for x in veg table). 
+#==> how can I change the command from there?/ Can I use it?
+#Solution: perhaps !=0 or !=x ==> x (if not 0 or x ==> x -> because there is some number in it)
+
+## merge vegetation data sets
 veg <- merge(veg_tec, veg_agr, by.x = "ID", by.y = "ID_")
 veg <- veg[c(-3,-4),]
 veg <- merge(veg, veg_nat, by.x = "ID", by.y = "ID_")
@@ -76,6 +91,19 @@ veg$ID[2] <- "Info2"
 veg$IDA[1] <- "Info1"
 veg$IDA[2] <- "Info2"
 
+##AZ: replace all values "x" with 1  #works! But how???
+##idea from: http://stackoverflow.com/questions/5824173/
+##replace-a-value-in-a-data-frame-based-on-a-conditional-if-statement-in-r
+veg[2:163,22:125][veg[2:163,22:125]=="x"]<-1
+
+#AZ: replace all values "5m" with 5! 
+#origin of this problem ist the autofill of excel. "5m" should only be in the headlines and not 
+#in the values
+veg[2:163,22:125][veg[2:163,22:125]=="5m"]<-5
+
+##AZ: getting rid of last line
+veg <- veg[1:164,]
+
 write.table(veg, "plots_vegetation_2014_merged.csv", sep = ",", row.names = FALSE)
 
 # Clean animal data set and merge with vegetation data set
@@ -84,6 +112,10 @@ anm$IDA[1] <- "Info2"
 anm <- anm[c(-52, -53),]
 
 veg_anm <- merge(veg, anm, by = "IDA", all.x = TRUE)
+
+##AZ: getting rid of last 2 lines
+veg_anm <- veg_anm[1:162,]
+
 write.table(veg_anm, "plots_veg_anm_2014.csv", sep = ",", row.names = FALSE)
 
 #vegshape <- readOGR("plots_vegetation_2014.shp", layer = "polygon")
