@@ -29,9 +29,12 @@
 #  NOTE: DO NOT USE A TOP LEVEL OUTPUT PATH WHICH IS INSIDE THE TOP LEVEL INPUT
 #        PATH
 
+####Packages#########
+library(rgdal)
+
 #### User setttings ############################################################
-inpath <- "/home/alice/Desktop/kap_verde_exkursion/AGNauss_182/field_campaign_2014/procd/"
-top_level_outpath <- "/home/alice/Desktop/kap_verde_exkursion/AGNauss_182/field_campaign_2014/raw/"
+inpath <- "/home/alice/Desktop/kap_verde_exkursion/AGNauss_182/field_campaign_2014/raw/"
+top_level_outpath <- "/home/alice/Desktop/kap_verde_exkursion/AGNauss_182/field_campaign_2014/procd/"
 
 # Use this for the Cape Verdian national projection as defined by
 # SR-ORG:7391 at www.spatialreference.org and EPSG:4825 at
@@ -43,7 +46,7 @@ proj_out <- paste0("+proj=lcc +lat_1=15 +lat_2=16.66666666666667 ",
 
 #### DO NOT CHANGE ANYTHING BELOW THIS LINE EXCEPT YOU KNOW WHAT YOU DO ########
 #### Merge vegetation and animal files #########################################
-setwd(top_level_outpath)
+setwd(inpath)
 
 veg_tec <- read.table("plots_vegetation_2014_tec.csv", 
                   header = FALSE, sep = ";", skip = 2, stringsAsFactors = FALSE)
@@ -70,16 +73,18 @@ veg_agr <- veg_agr[-2,]
 veg_nat <- veg_nat[-2,]
 
 ## AZ: correct several colnames (veg_nat) # not working yet
-colnames(veg_nat[35]) <- "GLO_5"
-colnames(veg_nat[36]) <- "GLO_10"
-colnames(veg_nat[39]) <- "HEL_5"
-colnames(veg_nat[40]) <- "HEL_10"
+colnames(veg_nat)[34] <- "GLO_5"
+colnames(veg_nat)[35] <- "GLO_10"
+colnames(veg_nat)[38] <- "HEL_5"
+colnames(veg_nat)[39] <- "HEL_10"
 
 ##AZ: replace all numeric values in the veg_nat table with "x"
-#Problem 1: every value is a character...numeric values can not be seperated by type
-#Problem 2: not looking for one specific value (like e.g. for x in veg table). 
-#==> how can I change the command from there?/ Can I use it?
-#Solution: perhaps !=0 or !=x ==> x (if not 0 or x ==> x -> because there is some number in it)
+#problem: does iteration through all columns, but doesn't start at column 2 but 1
+
+#for (i in seq (2:70)){
+#  veg_nat[4:165,i][(grepl("[[:digit:]]", veg_nat[4:165,i]) & veg_nat[4:165,i] != 0)] <- "x"
+#}
+
 
 ## merge vegetation data sets
 veg <- merge(veg_tec, veg_agr, by.x = "ID", by.y = "ID_")
@@ -91,12 +96,13 @@ veg$ID[2] <- "Info2"
 veg$IDA[1] <- "Info1"
 veg$IDA[2] <- "Info2"
 
-##AZ: replace all values "x" with 1  #works! But how???
+##AZ: replace all values "x" with 1  #works!
 ##idea from: http://stackoverflow.com/questions/5824173/
 ##replace-a-value-in-a-data-frame-based-on-a-conditional-if-statement-in-r
+
 veg[2:163,22:125][veg[2:163,22:125]=="x"]<-1
 
-#AZ: replace all values "5m" with 5! 
+#AZ: replace all values "5m" with 5
 #origin of this problem ist the autofill of excel. "5m" should only be in the headlines and not 
 #in the values
 veg[2:163,22:125][veg[2:163,22:125]=="5m"]<-5
@@ -118,7 +124,16 @@ veg_anm <- veg_anm[1:162,]
 
 write.table(veg_anm, "plots_veg_anm_2014.csv", sep = ",", row.names = FALSE)
 
-#vegshape <- readOGR("plots_vegetation_2014.shp", layer = "polygon")
-#anmshape <- readOGR("plots_vegetation_2014.shp", layer = "polygon")
+#read GPS Data from shapefile: coordinates, elevation and Plot ID
+GPS <- readOGR("Vegplotsall.shp", layer = "Vegplotsall")
+GPS <- data.frame(GPS[,c(1:2,5)])
 
+colnames(GPS)[4] <- "Lon"
+colnames(GPS)[5] <-"Lat"
 
+veg_anm_geo <- merge(veg_anm, GPS, by.x = "ID", by.y = "name")
+
+write.table(veg_anm_geo, "plots_veg_anm_geo_2014.csv", sep = ",", row.names = FALSE)
+
+##still to work on: 
+#line 81 for doesn't start to iterate columns from 3 but from 1
