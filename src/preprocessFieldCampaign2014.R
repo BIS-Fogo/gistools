@@ -144,10 +144,14 @@ for(col in colnames(veg_anm_geo[,grepl("10_AGR|_NAT", colnames(veg_anm_geo))])){
   veg_anm_geo[,col] <- as.numeric(veg_anm_geo[,col])
 }
 
+veg_anm_geo$IDA[veg_anm_geo$IDA == ""] <- NA
 
 scol <- which(colnames(veg_anm_geo) == "RemarksAnimal")+1
 ecol <- which(colnames(veg_anm_geo) == "ele")-1
-veg_anm_geo[,scol:ecol][is.na(veg_anm_geo[,scol:ecol])] <- 0
+
+veg_anm_geo[!is.na(veg_anm_geo$IDA),
+            scol:ecol][is.na(veg_anm_geo[!is.na(veg_anm_geo$IDA),
+                                         scol:ecol])] <- 0
 
 
 write.table(veg_anm_geo, paste0(outpath, "plots_veg_anm_geo_2014.csv"), 
